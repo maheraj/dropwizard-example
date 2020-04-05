@@ -1,0 +1,7 @@
+logging:
+  level: INFO
+  loggers:
+    io.dropwizard: DEBUG
+
+template: Hello, %s!
+defaultName: Stranger
