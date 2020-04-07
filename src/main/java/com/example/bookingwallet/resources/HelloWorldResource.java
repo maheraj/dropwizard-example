@@ -1,6 +1,6 @@
-package com.example.helloworld.resources;
+package com.example.bookingwallet.resources;
 
-import com.example.helloworld.api.Saying;
+import com.example.bookingwallet.api.Saying;
 import com.codahale.metrics.annotation.Timed;
 
 import javax.ws.rs.GET;

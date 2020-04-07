@@ -1,4 +1,4 @@
-package com.example.helloworld.api;
+package com.example.bookingwallet.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

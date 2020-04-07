@@ -1,11 +1,11 @@
-package com.example.helloworld;
+package com.example.bookingwallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 
 import javax.validation.constraints.NotEmpty;
 
-public class HelloWorldConfiguration extends Configuration {
+public class BookingWalletConfiguration extends Configuration {
     @NotEmpty
     private String template;
 

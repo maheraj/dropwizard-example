@@ -123,7 +123,7 @@
   </dependencyManagement>
   <properties>
     <dropwizard.version>2.0.6</dropwizard.version>
-    <mainClass>com.example.helloworld.HelloWorldApplication</mainClass>
+    <mainClass>com.example.bookingwallet.BookingWalletApplication</mainClass>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

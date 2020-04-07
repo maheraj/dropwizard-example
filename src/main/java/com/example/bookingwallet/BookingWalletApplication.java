@@ -1,29 +1,29 @@
-package com.example.helloworld;
+package com.example.bookingwallet;
 
-import com.example.helloworld.health.TemplateHealthCheck;
-import com.example.helloworld.resources.HelloWorldResource;
+import com.example.bookingwallet.health.TemplateHealthCheck;
+import com.example.bookingwallet.resources.HelloWorldResource;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
-public class HelloWorldApplication extends Application<HelloWorldConfiguration> {
+public class BookingWalletApplication extends Application<BookingWalletConfiguration> {
 
     public static void main(final String[] args) throws Exception {
-        new HelloWorldApplication().run(args);
+        new BookingWalletApplication().run(args);
     }
 
     @Override
     public String getName() {
-        return "hello-world";
+        return "booking-wallet";
     }
 
     @Override
-    public void initialize(final Bootstrap<HelloWorldConfiguration> bootstrap) {
+    public void initialize(final Bootstrap<BookingWalletConfiguration> bootstrap) {
         // TODO: application initialization
     }
 
     @Override
-    public void run(final HelloWorldConfiguration configuration,
+    public void run(final BookingWalletConfiguration configuration,
                     final Environment environment) {
         final HelloWorldResource resource = new HelloWorldResource(
                 configuration.getTemplate(),

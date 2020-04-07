@@ -1,10 +1,10 @@
-# Dropwizard Example Application
+# Booking Wallet Example Application
 
-How to start the Dropwizard Example Application application
+How to start the Booking Wallet Example Application application
 ---
 
 1. Run `mvn clean install` to build your application
-1. Start application with `java -jar target/dropwizard-example-1.0-SNAPSHOT.jar server config.yml`
+1. Start application with `java -jar target/booking-wallet-1.0-SNAPSHOT.jar server config.yml`
 1. To check that your application is running enter url `http://localhost:8080`
 
 Health Check
