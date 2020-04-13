@@ -1,7 +1,10 @@
+server:
+  rootPath: /booking-wallet/
+
 logging:
   level: INFO
   loggers:
     io.dropwizard: DEBUG
 
-template: Hello, %s!
-defaultName: Stranger
+swagger:
+  resourcePackage: com.example.bookingwallet
