@@ -56,4 +56,8 @@ public class WalletDB {
         }
         return null;
     }
+
+    public static Wallet getExpenseWallet() {
+        return getById(1);
+    }
 }

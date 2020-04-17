@@ -1,24 +1,24 @@
 package com.example.bookingwallet.core;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Campaign {
     private long id;
     private String name;
-    private String currency;
     private double balance;
     private double budget;
-    private Wallet wallet;
+    private long walletId;
     private Long lastTransactionId;
 
-    public Campaign(String name, String currency, double budget) {
+    private Wallet wallet;
+
+    public Campaign(String name, double budget) {
         this.name = name;
-        this.currency = currency;
         this.budget = budget;
     }
 }

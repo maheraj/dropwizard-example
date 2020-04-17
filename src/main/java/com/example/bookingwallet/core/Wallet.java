@@ -1,26 +1,26 @@
 package com.example.bookingwallet.core;
 
 import com.example.bookingwallet.core.constant.WalletType;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Wallet {
     private long id;
-    private String currency;
+    private String currencyCode;
     private WalletType walletType;
     private Long customerId;
 
-    public Wallet(WalletType walletType, String currency) {
+    public Wallet(WalletType walletType, String currencyCode) {
         this.walletType = walletType;
-        this.currency = currency;
+        this.currencyCode = currencyCode;
     }
 
-    public Wallet(long id, WalletType walletType, String currency) {
-        this(walletType, currency);
+    public Wallet(long id, WalletType walletType, String currencyCode) {
+        this(walletType, currencyCode);
         this.id = id;
     }
 }

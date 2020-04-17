@@ -30,9 +30,9 @@ public class CampaignDB {
         return result;
     }
 
-    public static void createCampaign(Campaign campaign) {
+    public static void createCampaign(Campaign campaign, String currencyCode) {
         //create wallet
-        Wallet wallet = new Wallet(WalletType.CAMPAIGN_WALLET, campaign.getCurrency());
+        Wallet wallet = new Wallet(WalletType.CAMPAIGN_WALLET, currencyCode);
         WalletDB.createWallet(wallet);
 
         //create campaign

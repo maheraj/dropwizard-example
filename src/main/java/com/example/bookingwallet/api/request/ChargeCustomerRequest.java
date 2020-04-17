@@ -7,24 +7,25 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
 
 @Data
 @NoArgsConstructor
-@ApiModel(value = "CreateWalletRequest")
-public class CreateWalletRequest extends BaseRequest {
-
-    @Positive(message = "must be valid")
-    @ApiModelProperty(value = "Customer Id", required = true)
-    private long customerId;
+@ApiModel(value = "ChargeCustomerRequest")
+public class ChargeCustomerRequest extends BaseRequest {
 
     @NotEmpty
     @Size(min = 3, max = 3, message = "must be 3 characters long")
     @ApiModelProperty(value = "Currency code: USD, BDT, etc.", required = true)
     private String CurrencyCode;
 
-    public CreateWalletRequest(long customerId, String currencyCode) {
-        this.customerId = customerId;
+    @Positive(message = "must be greater than zero")
+    @ApiModelProperty(value = "Credit Amount", required = true)
+    private double amount;
+
+    public ChargeCustomerRequest(String currencyCode, double amount) {
         CurrencyCode = currencyCode;
+        this.amount = amount;
     }
 }

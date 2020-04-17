@@ -9,13 +9,12 @@ import javax.validation.constraints.*;
 
 @Data
 @NoArgsConstructor
-@ApiModel(value = "CreateCampaignRequest")
-public class CreateCampaignRequest extends BaseRequest {
+@ApiModel(value = "ChargeCampaignRequest")
+public class ChargeCampaignRequest extends BaseRequest {
 
-    @NotEmpty
-    @Size(min = 3, max = 16, message = "must not exceed  16 characters")
-    @ApiModelProperty(value = "Name of the campaign", required = true)
-    private String name;
+    @Positive(message = "must be valid")
+    @ApiModelProperty(value = "Customer Wallet Id", required = true)
+    private long customerWalletId;
 
     @NotEmpty
     @Size(min = 3, max = 3, message = "must be 3 characters long")
@@ -23,12 +22,12 @@ public class CreateCampaignRequest extends BaseRequest {
     private String currencyCode;
 
     @Positive(message = "must be greater than zero")
-    @ApiModelProperty(value = "Campaign Budget", required = true)
-    private double budget;
+    @ApiModelProperty(value = "Credit Amount", required = true)
+    private double amount;
 
-    public CreateCampaignRequest(String name, String currencyCode, double budget) {
-        this.name = name;
+    public ChargeCampaignRequest(long customerWalletId, String currencyCode, double amount) {
+        this.customerWalletId = customerWalletId;
         this.currencyCode = currencyCode;
-        this.budget = budget;
+        this.amount = amount;
     }
 }

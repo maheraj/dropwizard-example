@@ -10,17 +10,20 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-public class WalletResponse {
+public class WalletBalanceResponse {
     private long walletId;
     private Long customerId;
-    private String currencyCode;
     private WalletType walletType;
+    private double balance;
+    private String currencyCode;
+
     private List<Link> links = new ArrayList<>();
 
-    public WalletResponse(Wallet wallet) {
+    public WalletBalanceResponse(Wallet wallet, double balance) {
         this.walletId = wallet.getId();
-        this.walletType = wallet.getWalletType();
         this.customerId = wallet.getCustomerId();
+        this.walletType = wallet.getWalletType();
+        this.balance = balance;
         this.currencyCode = wallet.getCurrencyCode();
         this.links.add(new Link("self", "/wallets?customerId=" + this.customerId));
     }

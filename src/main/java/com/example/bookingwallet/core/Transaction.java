@@ -1,19 +1,29 @@
 package com.example.bookingwallet.core;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-@Setter
+
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Transaction {
     private long id;
     private Date date;
-    private boolean refunded;
-    private Set<TransactionPart> transactionParts = new HashSet<>();
+    private String originalCurrencyCode;
+    private double originalAmount;
+    private Set<TransactionPart> transactionParts;
+
+    public void addTransactionPart(TransactionPart part) {
+        if (this.transactionParts == null) {
+            this.transactionParts = new HashSet<>();
+        }
+        this.transactionParts.add(part);
+    }
+
 }

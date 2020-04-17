@@ -1,24 +1,23 @@
 package com.example.bookingwallet.core;
 
 import com.example.bookingwallet.core.constant.TransactionDirection;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class TransactionPart implements Cloneable {
     private long id;
-    private TransactionDirection direction;
-    private long walletId;
-    private double amount;
-    private String currency;
-    private long instrumentId;
     private long transactionId;
-    private boolean refund;
+    private long walletId;
+    private TransactionDirection direction;
+    private double amount;
+    private String currencyCode;
+    //private boolean refund;// remove this
 
-    // Overriding clone() method of Object class
+    @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }

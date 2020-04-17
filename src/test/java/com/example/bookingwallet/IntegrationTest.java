@@ -1,11 +1,19 @@
 package com.example.bookingwallet;
 
-import com.example.bookingwallet.api.request.*;
+import com.example.bookingwallet.api.request.ChargeCampaignRequest;
+import com.example.bookingwallet.api.request.CreateCampaignRequest;
+import com.example.bookingwallet.api.request.CreateWalletRequest;
 import com.example.bookingwallet.api.response.CampaignResponse;
-import com.example.bookingwallet.api.response.TransactionResponse;
+import com.example.bookingwallet.api.response.ChargeCampaignResponse;
+import com.example.bookingwallet.api.response.WalletBalanceResponse;
 import com.example.bookingwallet.api.response.WalletResponse;
+import com.example.bookingwallet.util.CurrencyExchangeUtil;
+import com.example.bookingwallet.util.EuroCurrencyRate;
+import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -16,97 +24,91 @@ import javax.ws.rs.core.Response;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 @ExtendWith(DropwizardExtensionsSupport.class)
-public class IntegrationTest {
+class IntegrationTest {
 
-    public static final DropwizardAppExtension<BookingWalletConfiguration> RULE = new DropwizardAppExtension<>(BookingWalletApplication.class, new BookingWalletConfiguration());
-
+    private static final DropwizardAppExtension<BookingWalletConfiguration> RULE = new DropwizardAppExtension<>(
+            BookingWalletApplication.class,
+            ResourceHelpers.resourceFilePath("config.yml"));
 
     @Test
-    public void testApp() {
+    void testApp() {
         Client client = RULE.client();
+
         // Step 1: create a campaign
-        CreateCampaignRequest createCampaignRequest = new CreateCampaignRequest("Funding Wallet - 1", "USD", 100);
+        Money budgetMoney = Money.of(CurrencyUnit.EUR, 100);
+        CreateCampaignRequest createCampaignRequest = new CreateCampaignRequest("Funding Campaign", EuroCurrencyRate.EUR.name(), budgetMoney.getAmount().doubleValue());
         Response response = client.target(
-                String.format("http://localhost:%d/campaigns", RULE.getLocalPort()))
+                String.format("http://localhost:%d/booking-wallet/campaigns", RULE.getLocalPort()))
                 .request()
                 .post(Entity.entity(createCampaignRequest, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
 
         response.bufferEntity();
-        CampaignResponse campaignResponse = response.readEntity(CampaignResponse.class);
-        System.out.println("Campaign Response:");
+        System.out.println("Create Campaign Response:");
         System.out.println(response.readEntity(String.class));
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        CampaignResponse campaignResponse = response.readEntity(CampaignResponse.class);
         System.out.println("-------------------------------------------------");
+
         // Step 2: create a customer wallet
-        //WARNING - customer object is missing. assuming that I have customer ID
+        CurrencyUnit customerCurrencyUnit = CurrencyUnit.USD;
         long customerId = 1001;
-        CreateWalletRequest createWalletRequest = new CreateWalletRequest(customerId, "USD");
+        CreateWalletRequest createWalletRequest = new CreateWalletRequest(customerId, customerCurrencyUnit.getCode());
         response = client.target(
-                String.format("http://localhost:%d/wallets", RULE.getLocalPort()))
+                String.format("http://localhost:%d/booking-wallet/wallets", RULE.getLocalPort()))
                 .request()
                 .post(Entity.entity(createWalletRequest, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
 
         response.bufferEntity();
-        WalletResponse walletResponse = response.readEntity(WalletResponse.class);
-        System.out.println("Wallet Response:");
+        System.out.println("Create Customer Wallet Response:");
         System.out.println(response.readEntity(String.class));
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        WalletResponse walletResponse = response.readEntity(WalletResponse.class);
         System.out.println("-------------------------------------------------");
 
         // Step 3: issue credit to a customer
-        IssuingCreditRequest issuingCreditRequest = new IssuingCreditRequest(campaignResponse.getCampaignId(), walletResponse.getWalletId(), walletResponse.getCurrency(), 10);
+        Money chargeCampaignMoney = Money.of(CurrencyUnit.CAD, 15);
+        ChargeCampaignRequest chargeCampaignRequest = new ChargeCampaignRequest(walletResponse.getWalletId(), chargeCampaignMoney.getCurrencyUnit().getCode(), chargeCampaignMoney.getAmount().doubleValue());
         response = client.target(
-                String.format("http://localhost:%d/transactions/issue-credit", RULE.getLocalPort()))
+                String.format("http://localhost:%d/booking-wallet/campaigns/%d/charge", RULE.getLocalPort(), campaignResponse.getCampaignId()))
                 .request()
-                .post(Entity.entity(issuingCreditRequest, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+                .post(Entity.entity(chargeCampaignRequest, MediaType.APPLICATION_JSON));
 
         response.bufferEntity();
-        TransactionResponse issuingCreditResponse = response.readEntity(TransactionResponse.class);
-        System.out.println("Issue Credit Response:");
+        System.out.println("Charge Campaign Response:");
         System.out.println(response.readEntity(String.class));
-        System.out.println("-------------------------------------------------");
-
-        // Step 4: redeem credit for a reservation
-        RedeemCreditRequest redeemCreditRequest = new RedeemCreditRequest(walletResponse.getWalletId(), walletResponse.getCurrency(), 10);
-        response = client.target(
-                String.format("http://localhost:%d/transactions/redeem-credit", RULE.getLocalPort()))
-                .request()
-                .post(Entity.entity(redeemCreditRequest, MediaType.APPLICATION_JSON));
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-
-        response.bufferEntity();
-        TransactionResponse redeemCreditResponse = response.readEntity(TransactionResponse.class);
-        System.out.println("Redeem Credit Response:");
-        System.out.println(response.readEntity(String.class));
+        response.readEntity(ChargeCampaignResponse.class);
         System.out.println("-------------------------------------------------");
-        // Step 5: refund credit to the customer
-        RefundCreditRequest refundCreditRequest = new RefundCreditRequest();
+
+        // Step 4: get campaign balance
         response = client.target(
-                String.format("http://localhost:%d/transactions/%d/refund", RULE.getLocalPort(), redeemCreditResponse.getTransactionId()))
+                String.format("http://localhost:%d/booking-wallet/wallets/%d/balance", RULE.getLocalPort(), campaignResponse.getCampaignWalletId()))
                 .request()
-                .post(Entity.entity(redeemCreditRequest, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-
+                .get();
+        System.out.println("Campaign balance Response:");
         response.bufferEntity();
-        TransactionResponse refundCreditResponse = response.readEntity(TransactionResponse.class);
-        System.out.println("Refund Customer Credit Response:");
         System.out.println(response.readEntity(String.class));
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        WalletBalanceResponse campaignBalance = response.readEntity(WalletBalanceResponse.class);
         System.out.println("-------------------------------------------------");
-        // Step 6: refund credit to the campaign
-        RefundCreditRequest refundCampaignRequest = new RefundCreditRequest();
+
+        // Step 5: get customer wallet response
         response = client.target(
-                String.format("http://localhost:%d/transactions/%d/refund", RULE.getLocalPort(), issuingCreditResponse.getTransactionId()))
+                String.format("http://localhost:%d/booking-wallet/wallets/%d/balance", RULE.getLocalPort(), walletResponse.getWalletId()))
                 .request()
-                .post(Entity.entity(redeemCreditRequest, MediaType.APPLICATION_JSON));
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+                .get();
 
+        System.out.println("Campaign balance Response:");
         response.bufferEntity();
-        TransactionResponse refundCampaignResponse = response.readEntity(TransactionResponse.class);
-        System.out.println("Refund Campaign Credit Response:");
         System.out.println(response.readEntity(String.class));
+        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        WalletBalanceResponse walletBalance = response.readEntity(WalletBalanceResponse.class);
         System.out.println("-------------------------------------------------");
+
+        assertThat(CurrencyExchangeUtil.convert(walletBalance.getCurrencyCode(), walletBalance.getBalance(), campaignBalance.getCurrencyCode()) + campaignBalance.getBalance()).isEqualTo(0);
+
     }
 
 }
