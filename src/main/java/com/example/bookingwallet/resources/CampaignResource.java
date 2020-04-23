@@ -7,12 +7,14 @@ import com.example.bookingwallet.api.response.CampaignResponse;
 import com.example.bookingwallet.api.response.ChargeCampaignResponse;
 import com.example.bookingwallet.api.response.RefundCampaignResponse;
 import com.example.bookingwallet.core.Campaign;
-import com.example.bookingwallet.core.Transaction;
+import com.example.bookingwallet.core.Wallet;
+import com.example.bookingwallet.core.constant.WalletType;
 import com.example.bookingwallet.service.BookingWalletService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.jdbi.v3.core.Jdbi;
+import org.joda.money.CurrencyUnit;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
@@ -48,7 +50,12 @@ public class CampaignResource {
         return new CampaignResponse(campaign);
     }
 
-    //method c
+    //Test Case:
+    //Lets say: there are 4 methods insert 1, insert 2, insert 3 and insert 4 method
+    // Method a have insert 1 & 2 inside transaction
+    // Method b have insert 3, 4 inside transaction
+    // method c have a and b inside transaction with last statement: throw exception
+    // see if transaction works as expected
     @GET
     @Path("/test-transaction")
     @ApiOperation(value = "Test JDBI Transaction", nickname = "JDBI Transaction")
@@ -56,15 +63,15 @@ public class CampaignResource {
         return jdbi.inTransaction(handle -> {
             BookingWalletService service = new BookingWalletService(handle);
 
-            CreateCampaignRequest request = new CreateCampaignRequest("Campaign", "EUR", 100);
+            CreateCampaignRequest request = new CreateCampaignRequest("Campaign", CurrencyUnit.EUR.getCode(), 100);
             Campaign campaign = service.saveCampaign(request);
 
-            ChargeCampaignRequest chargeRequest = new ChargeCampaignRequest(3, "EUR", 5.0);
-            Transaction transaction = service.saveChargeCampaignTransaction(chargeRequest, campaign.getId());
-            if (transaction.getOriginalAmount() == 5) {
-                throw new Exception("Break the transaction");
-            }
-            return new ChargeCampaignResponse(campaign.getId(), transaction);
+            Wallet customerWallet = new Wallet(0, WalletType.CUSTOMER_WALLET, CurrencyUnit.EUR.getCode());
+            service.createWallet(customerWallet);
+
+            ChargeCampaignRequest chargeRequest = new ChargeCampaignRequest(customerWallet.getId(), CurrencyUnit.EUR.getCode(), 5.0);
+            service.saveChargeCampaignTransaction(chargeRequest, campaign.getId());
+            throw new Exception("Break the transaction");
         });
     }
 
