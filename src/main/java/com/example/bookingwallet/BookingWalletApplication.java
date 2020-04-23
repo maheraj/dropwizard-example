@@ -48,8 +48,7 @@ public class BookingWalletApplication extends Application<BookingWalletConfigura
 
 
         //Resource
-        BookingWalletService service = new BookingWalletService(jdbi);
-        environment.jersey().register(new CampaignResource(service));
-        environment.jersey().register(new WalletResource(service));
+        environment.jersey().register(new CampaignResource(jdbi));
+        environment.jersey().register(new WalletResource(jdbi));
     }
 }

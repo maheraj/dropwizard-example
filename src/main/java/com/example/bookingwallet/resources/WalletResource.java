@@ -10,6 +10,7 @@ import com.example.bookingwallet.api.response.WalletResponse;
 import com.example.bookingwallet.core.Transaction;
 import com.example.bookingwallet.core.TransactionPart;
 import com.example.bookingwallet.core.Wallet;
+import com.example.bookingwallet.core.constant.Operation;
 import com.example.bookingwallet.core.constant.TransactionDirection;
 import com.example.bookingwallet.core.constant.WalletType;
 import com.example.bookingwallet.service.BookingWalletService;
@@ -17,6 +18,9 @@ import com.example.bookingwallet.util.CurrencyExchangeUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.jdbi.v3.core.Jdbi;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
@@ -32,15 +36,16 @@ import java.util.List;
 @Api(value = "Customer Wallet APIs")
 public class WalletResource {
 
-    private BookingWalletService bookingWalletService;
+    private Jdbi jdbi;
 
-    public WalletResource(BookingWalletService service) {
-        this.bookingWalletService = service;
+    public WalletResource(Jdbi jdbi) {
+        this.jdbi = jdbi;
     }
 
     @GET
     @ApiOperation(value = "List wallets", nickname = "wallets")
     public List<WalletResponse> wallets() {
+        BookingWalletService bookingWalletService = new BookingWalletService(this.jdbi.open());
         List<Wallet> walletList = bookingWalletService.listWallets();
         List<WalletResponse> results = new ArrayList<>();
         for (Wallet wallet : walletList) {
@@ -56,6 +61,7 @@ public class WalletResource {
             @ApiParam(value = "walletId", required = true)
             @Positive(message = "must be valid")
             @PathParam("walletId") long walletId) {
+        BookingWalletService bookingWalletService = new BookingWalletService(this.jdbi.open());
         Wallet wallet = bookingWalletService.getWalletById(walletId);
         return new WalletResponse(wallet);
     }
@@ -63,12 +69,12 @@ public class WalletResource {
     @POST
     @ApiOperation(value = "Create customer wallet", nickname = "create wallet")
     public WalletResponse createCustomerWallet(@Valid final CreateWalletRequest request) {
-        Wallet wallet = new Wallet();
-        wallet.setWalletType(WalletType.CUSTOMER_WALLET);
-        wallet.setCurrencyCode(request.getCurrencyCode());
-        wallet.setCustomerId(request.getCustomerId());
-        bookingWalletService.createWallet(wallet);
-        return new WalletResponse(wallet);
+        return jdbi.inTransaction(handle -> {
+            BookingWalletService bookingWalletService = new BookingWalletService(this.jdbi.open());
+            Wallet wallet = new Wallet(0, request.getCurrencyCode(), WalletType.CUSTOMER_WALLET, request.getCustomerId());
+            bookingWalletService.createWallet(wallet);
+            return new WalletResponse(wallet);
+        });
     }
 
     @POST
@@ -76,35 +82,39 @@ public class WalletResource {
     @ApiOperation(value = "Charge customer wallet", nickname = "charge wallet")
     public ChargeCustomerResponse chargeCustomer(
             @Valid final ChargeCustomerRequest request,
-
             @ApiParam(value = "walletId", required = true)
             @Positive(message = "must be valid")
             @PathParam("walletId") final long walletId
     ) throws Exception {
-        //validations
-        Wallet customerWallet = bookingWalletService.getWalletById(walletId);
-        double amount = CurrencyExchangeUtil.convert(request.getCurrencyCode(), request.getAmount(), customerWallet.getCurrencyCode());
-        double balance = bookingWalletService.getWalletBalance(customerWallet.getId());
-        if (amount > balance) {
-            throw new Exception("Insufficient balance");
-        }
+        return this.jdbi.inTransaction(handle -> {
+            BookingWalletService bookingWalletService = new BookingWalletService(handle);
+            Money transactionMoney = Money.of(CurrencyUnit.of(request.getCurrencyCode()), request.getAmount());
+            Wallet customerWallet = bookingWalletService.getWalletById(walletId);
+            CurrencyUnit customerWalletCurrency = CurrencyUnit.of(customerWallet.getCurrencyCode());
+
+            double amount = CurrencyExchangeUtil.convert(transactionMoney, customerWalletCurrency);
+            double balance = bookingWalletService.getWalletBalance(customerWallet.getId());
+            if (amount > balance) {
+                throw new Exception("Insufficient balance");
+            }
 
 
-        Transaction transaction = new Transaction();
-        transaction.setDate(new Date());
-        bookingWalletService.createTransaction(transaction);
+            Transaction transaction = new Transaction(0, new Date(), transactionMoney.getCurrencyUnit().getCode(), transactionMoney.getAmount().doubleValue(), null, null, Operation.CHARGE, null);
+            bookingWalletService.createTransaction(transaction);
 
-        TransactionPart debitPart = new TransactionPart(0, transaction.getId(), customerWallet.getId(), TransactionDirection.DEBIT, amount, customerWallet.getCurrencyCode());
-        bookingWalletService.createTransactionPart(debitPart);
-        transaction.addTransactionPart(debitPart);
+            TransactionPart debitPart = new TransactionPart(0, transaction.getId(), customerWallet.getId(), TransactionDirection.DEBIT, amount, customerWallet.getCurrencyCode());
+            bookingWalletService.createTransactionPart(debitPart);
+            transaction.addTransactionPart(debitPart);
 
-        Wallet expenseWallet = bookingWalletService.getExpenseWallet();
-        amount = CurrencyExchangeUtil.convert(request.getCurrencyCode(), request.getAmount(), expenseWallet.getCurrencyCode());
-        TransactionPart creditPart = new TransactionPart(0, transaction.getId(), expenseWallet.getId(), TransactionDirection.CREDIT, amount, expenseWallet.getCurrencyCode());
-        bookingWalletService.createTransactionPart(creditPart);
-        transaction.addTransactionPart(creditPart);
+            Wallet expenseWallet = bookingWalletService.getExpenseWallet();
+            CurrencyUnit expenseWalletCurrency = CurrencyUnit.of(expenseWallet.getCurrencyCode());
+            amount = CurrencyExchangeUtil.convert(transactionMoney, expenseWalletCurrency);
+            TransactionPart creditPart = new TransactionPart(0, transaction.getId(), expenseWallet.getId(), TransactionDirection.CREDIT, amount, expenseWallet.getCurrencyCode());
+            bookingWalletService.createTransactionPart(creditPart);
+            transaction.addTransactionPart(creditPart);
 
-        return new ChargeCustomerResponse(transaction);
+            return new ChargeCustomerResponse(transaction);
+        });
     }
 
     @POST
@@ -117,30 +127,11 @@ public class WalletResource {
             @Positive(message = "must be valid")
             @PathParam("walletId") final long walletId
 
-    )  {
-        /*
-        Transaction transaction = transactionDao.getById(request.getTransactionId());
-        transaction.getTransactionParts().addAll(transactionPartDao.getByTransactionId(transaction.getId()));
-        if (transaction.isRefunded()) {
-            return new RefundCustomerResponse(transaction);
-        }
-
-        //create debit part
-        List<TransactionPart> refundParts = new ArrayList<>();
-        for (TransactionPart part : transaction.getTransactionParts()) {
-            TransactionPart refundPart = (TransactionPart) part.clone();
-            refundPart.setRefund(true);
-            refundPart.setDirection(part.getDirection().isDebit() ? TransactionDirection.CREDIT : TransactionDirection.DEBIT);
-            refundPart.setId(transactionPartDao.insert(refundPart));
-            refundParts.add(refundPart);
-        }
-        transaction.getTransactionParts().addAll(refundParts);
-        transaction.setRefunded(true);
-        transactionDao.update(transaction);
-        return new RefundCustomerResponse(transaction);
-
-         */
-        return null;
+    ) {
+        return this.jdbi.inTransaction(handle -> {
+            BookingWalletService service = new BookingWalletService(this.jdbi.open());
+            return new RefundCustomerResponse(service.refundTransaction(request.getTransactionId(), request.getRefundReason()));
+        });
     }
 
     @GET
@@ -151,7 +142,8 @@ public class WalletResource {
             @Positive(message = "must be valid")
             @PathParam("walletId") final long walletId
 
-    )  {
+    ) {
+        BookingWalletService bookingWalletService = new BookingWalletService(this.jdbi.open());
         Wallet wallet = bookingWalletService.getWalletById(walletId);
         double balance = bookingWalletService.getWalletBalance(walletId);
         return new WalletBalanceResponse(wallet, balance);

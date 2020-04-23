@@ -14,18 +14,18 @@ public class ChargeCustomerResponse {
     private long transactionId;
     private long customerWalletId;
     private long expenseWalletId;
-    private String currency;
+    private String currencyCode;
     private double transactionAmount;
     private double refundedAmount;
     private List<Link> links = new ArrayList<>();
 
     public ChargeCustomerResponse(Transaction transaction) {
         this.transactionId = transaction.getId();
+        this.currencyCode = transaction.getOriginalCurrencyCode();
+        this.transactionAmount = transaction.getOriginalAmount();
         for (TransactionPart part : transaction.getTransactionParts()) {
             if (part.getDirection().isDebit()) {
                     this.customerWalletId = part.getWalletId();
-                    this.currency = part.getCurrencyCode();
-                    this.transactionAmount += part.getAmount();
             } else {
                     this.expenseWalletId = part.getWalletId();
             }

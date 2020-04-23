@@ -1,3 +1,6 @@
+CREATE DATABASE walletdb;
+USE walletdb;
+
 DROP TABLE IF EXISTS Wallet;
 CREATE TABLE `Wallet`
 (
@@ -26,10 +29,13 @@ CREATE TABLE `Campaign`
 DROP TABLE IF EXISTS Transaction;
 CREATE TABLE `Transaction`
 (
-    `id`       BIGINT(20) NOT NULL AUTO_INCREMENT,
-    `date`     TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `originalAmount`        DECIMAL(13, 2) NOT NULL,
-    `originalCurrencyCode`  VARCHAR(3)     NOT NULL,
+    `id`                   BIGINT(20)     NOT NULL AUTO_INCREMENT,
+    `date`                 TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `originalAmount`       DECIMAL(13, 2) NOT NULL,
+    `originalCurrencyCode` VARCHAR(3)     NOT NULL,
+    `parentId`             BIGINT(20),
+    `operation`            VARCHAR(64)    NOT NULL,
+    `notes`                VARCHAR(255),
     PRIMARY KEY (`id`)
 );
 
@@ -50,3 +56,6 @@ CREATE TABLE `TransactionPart`
     INDEX INDEX_TRANSACTION_ID (transactionId)
 );
 
+# insert data
+INSERT INTO `Wallet` (`id`, `currencyCode`, `walletType`)
+VALUES (1, 'EUR', 'EXPENSE_WALLET');

@@ -8,23 +8,19 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class CurrencyExchangeUtil {
-    public static double convert(String sourceCurrencyCode, double sourceAmount, String targetCurrencyCode) {
-        if (sourceCurrencyCode.equalsIgnoreCase(targetCurrencyCode)) {
-            return Money.of(CurrencyUnit.of(targetCurrencyCode), sourceAmount, RoundingMode.UNNECESSARY).getAmount().doubleValue();
+    public static double convert(Money sourceMoney, CurrencyUnit targetCurrency) {
+        if (sourceMoney.getCurrencyUnit().getCode().equals(targetCurrency.getCode())) {
+            return sourceMoney.getAmount().doubleValue();
         }
 
-        CurrencyUnit sourceCurrency = CurrencyUnit.of(sourceCurrencyCode);
-        Money sourceMoney = Money.of(sourceCurrency, sourceAmount, RoundingMode.UNNECESSARY);
-
         CurrencyUnit euroCurrency = CurrencyUnit.EUR;
-        Money euroMoney = sourceMoney.convertedTo(euroCurrency, EuroCurrencyRate.valueOf(sourceCurrency.getCode()).rate, RoundingMode.HALF_EVEN);
+        Money euroMoney = sourceMoney.convertedTo(euroCurrency, EuroCurrencyRate.valueOf(sourceMoney.getCurrencyUnit().getCode()).rate, RoundingMode.HALF_EVEN);
 
-        CurrencyUnit targetCurrency = CurrencyUnit.of(targetCurrencyCode);
         if (euroCurrency.getCode().equals(targetCurrency.getCode())) {
             return euroMoney.getAmount().doubleValue();
         }
 
-        Money targetMoney = euroMoney.convertedTo(targetCurrency, new BigDecimal(1 / EuroCurrencyRate.valueOf(targetCurrencyCode).rate.doubleValue(), new MathContext(5)), RoundingMode.HALF_EVEN);
+        Money targetMoney = euroMoney.convertedTo(targetCurrency, new BigDecimal(1 / EuroCurrencyRate.valueOf(targetCurrency.getCode()).rate.doubleValue(), new MathContext(5)), RoundingMode.HALF_EVEN);
         return targetMoney.getAmount().doubleValue();
 }
 }

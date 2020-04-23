@@ -9,6 +9,7 @@ public enum EuroCurrencyRate {
     GBP(new BigDecimal("1.14817")),
     CHF(new BigDecimal("0.95090")),
     AUD(new BigDecimal("0.58453")),
+    BHD(new BigDecimal("2.45536")),
     CAD(new BigDecimal("0.65488"));
     BigDecimal rate;
 

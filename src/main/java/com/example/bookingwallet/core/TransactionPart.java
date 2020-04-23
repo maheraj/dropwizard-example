@@ -15,7 +15,6 @@ public class TransactionPart implements Cloneable {
     private TransactionDirection direction;
     private double amount;
     private String currencyCode;
-    //private boolean refund;// remove this
 
     @Override
     public Object clone() throws CloneNotSupportedException {

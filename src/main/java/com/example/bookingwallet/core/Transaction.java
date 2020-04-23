@@ -1,5 +1,6 @@
 package com.example.bookingwallet.core;
 
+import com.example.bookingwallet.core.constant.Operation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,10 @@ public class Transaction {
     private String originalCurrencyCode;
     private double originalAmount;
     private Set<TransactionPart> transactionParts;
+    private Long parentId;
+    private Operation operation;
+    private String notes;
+
 
     public void addTransactionPart(TransactionPart part) {
         if (this.transactionParts == null) {
